@@ -1,0 +1,326 @@
+{% extends "agenda/base_pro.html" %}
+
+{% block title %}Notifications · ÉduRégion{% endblock %}
+{% block page_title %}Mes notifications{% endblock %}
+
+{% block content %}
+
+<!-- Barre d'outils -->
+<div class="notifications-toolbar animate-toolbar">
+    <div class="stats-badge">
+        <i class="fas fa-bell"></i>
+        <span id="unreadCount">0</span> non lue(s)
+    </div>
+    <button class="btn-mark-all" onclick="markAllAsRead()">
+        <i class="fas fa-check-double"></i> Tout marquer comme lu
+    </button>
+</div>
+
+<!-- Liste des notifications -->
+<div class="notifications-list animate-list" id="notificationsList">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-pulse"></i> Chargement...
+    </div>
+</div>
+
+<style>
+    /* ===== BARRE D'OUTILS ===== */
+    .notifications-toolbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 1rem 1.8rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid rgba(30,58,47,0.08);
+    }
+
+    .stats-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #F7FAFC;
+        padding: 0.5rem 1.2rem;
+        border-radius: 40px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1E3A2F;
+    }
+
+    .stats-badge i {
+        color: #D69E2E;
+        font-size: 1.1rem;
+    }
+
+    .stats-badge span {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1E3A2F;
+    }
+
+    .btn-mark-all {
+        background: #1E3A2F;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 40px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-mark-all:hover {
+        background: #0F2A1F;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30,58,47,0.3);
+    }
+
+    /* ===== LISTE DES NOTIFICATIONS ===== */
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .notification-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.2rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .notification-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+
+    .notification-card.unread {
+        background: linear-gradient(135deg, #FFFFFF 0%, #F7FAFC 100%);
+        border-left: 4px solid #D69E2E;
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-message {
+        font-weight: 600;
+        color: #2D3748;
+        margin-bottom: 0.3rem;
+        font-size: 1rem;
+    }
+
+    .notification-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #718096;
+    }
+
+    .notification-meta i {
+        margin-right: 0.2rem;
+        color: #D69E2E;
+    }
+
+    .notification-type {
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .type-info {
+        background: #E3F2FD;
+        color: #1E3A2F;
+    }
+
+    .type-rappel {
+        background: #FEF3C7;
+        color: #D97706;
+    }
+
+    .type-urgence {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-mark-one {
+        background: none;
+        border: none;
+        color: #718096;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 40px;
+        transition: all 0.3s;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-mark-one:hover {
+        background: #1E3A2F;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    /* ===== ÉTAT VIDE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #CBD5E0;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #718096;
+        font-size: 1rem;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        padding: 3rem;
+        color: #718096;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-toolbar {
+        animation: fadeSlideUp 0.5s ease-out;
+    }
+
+    .animate-list {
+        animation: fadeSlideUp 0.6s ease-out;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .notifications-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .btn-mark-all {
+            justify-content: center;
+        }
+        .notification-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .notification-actions {
+            align-self: flex-end;
+        }
+    }
+</style>
+
+<script>
+    function loadNotifications() {
+        fetch('/api/notifications/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(notifications => {
+                const list = document.getElementById('notificationsList');
+                const unreadSpan = document.getElementById('unreadCount');
+                const unreadCount = notifications.filter(n => !n.lu).length;
+                unreadSpan.textContent = unreadCount;
+
+                if (notifications.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>Aucune notification</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = notifications.map(n => {
+                    let typeClass = 'type-info';
+                    let typeIcon = 'fa-info-circle';
+                    if (n.type === 'rappel') {
+                        typeClass = 'type-rappel';
+                        typeIcon = 'fa-clock';
+                    } else if (n.type === 'urgence') {
+                        typeClass = 'type-urgence';
+                        typeIcon = 'fa-exclamation-triangle';
+                    }
+
+                    return `
+                        <div class="notification-card ${n.lu ? '' : 'unread'}">
+                            <div class="notification-content">
+                                <div class="notification-message">${n.message}</div>
+                                <div class="notification-meta">
+                                    <span><i class="far fa-clock"></i> ${new Date(n.date_creation).toLocaleString('fr-FR')}</span>
+                                    <span class="notification-type ${typeClass}"><i class="fas ${typeIcon}"></i> ${n.type}</span>
+                                </div>
+                            </div>
+                            ${!n.lu ? `
+                            <div class="notification-actions">
+                                <button class="btn-mark-one" onclick="markAsRead(${n.id})" title="Marquer comme lu">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            });
+    }
+
+    function markAsRead(id) {
+        fetch(`/api/notifications/${id}/marquer_lue/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        }).then(() => loadNotifications());
+    }
+
+    function markAllAsRead() {
+        fetch('/api/notifications/tout_marquer_lu/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        }).then(() => loadNotifications());
+    }
+
+    loadNotifications();
+    
+</script>
+{% endblock %}

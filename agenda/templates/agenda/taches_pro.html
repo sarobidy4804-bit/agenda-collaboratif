@@ -1,0 +1,477 @@
+{% extends "agenda/base_pro.html" %}
+
+{% block title %}Tâches · ÉduCollab{% endblock %}
+{% block page_title %}Mes tâches{% endblock %}
+
+{% block content %}
+
+<!-- Barre de recherche et filtres -->
+<div class="tasks-toolbar">
+    <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Rechercher une tâche...">
+    </div>
+    <div class="filters">
+        <select id="filterPriority">
+            <option value="">Toutes priorités</option>
+            <option value="4">🔴 Urgente</option>
+            <option value="3">🟠 Haute</option>
+            <option value="2">🟢 Moyenne</option>
+            <option value="1">🔵 Basse</option>
+        </select>
+        <select id="filterStatus">
+            <option value="">Tous statuts</option>
+            <option value="a_faire">📋 À faire</option>
+            <option value="en_cours">⚙️ En cours</option>
+            <option value="terminee">✅ Terminées</option>
+        </select>
+        <button id="clearFilters" class="btn-clear">✖ Effacer</button>
+        <button id="exportBtn" class="btn-export" onclick="exportToCSV()">📎 Exporter CSV</button>
+    </div>
+</div>
+
+<!-- Bouton nouvelle tâche -->
+<div class="tasks-header">
+    <span class="tasks-count" id="tasksCount">0 tâche</span>
+    <button class="btn-add" onclick="showAddModal()">
+        <i class="fas fa-plus"></i> Nouvelle tâche
+    </button>
+</div>
+
+<!-- Liste des tâches -->
+<div class="tasks-grid" id="tasksGrid">
+    <div class="loading">Chargement...</div>
+</div>
+
+<!-- Modal d'ajout / modification -->
+<div class="modal" id="taskModal">
+    <div class="modal-content">
+        <h2 class="modal-title">Nouvelle tâche</h2>
+        <div class="form-group">
+            <label>Titre</label>
+            <input type="text" id="taskTitle" class="form-control" placeholder="Ex: Préparer rapport">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="taskDescription" class="form-control" rows="3" placeholder="Description..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Date limite</label>
+            <input type="datetime-local" id="taskDeadline" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>Priorité</label>
+            <select id="taskPriority" class="form-control">
+                <option value="1">Basse</option>
+                <option value="2" selected>Moyenne</option>
+                <option value="3">Haute</option>
+                <option value="4">Urgente</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal()">Annuler</button>
+            <button class="btn btn-primary" id="modalActionBtn" onclick="createTask()">Créer</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== BARRE D'OUTILS ===== */
+    .tasks-toolbar {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    .search-box {
+        flex: 1;
+        position: relative;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #718096;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 40px;
+    }
+    .filters {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .filters select, .btn-clear, .btn-export {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 40px;
+        background: white;
+        cursor: pointer;
+    }
+    .btn-clear:hover, .btn-export:hover {
+        background: #1E3A2F;
+        color: white;
+    }
+    .tasks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .btn-add {
+        background: #1E3A2F;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 40px;
+        cursor: pointer;
+    }
+    .task-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+    }
+    .task-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+    .task-check {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #cbd5e0;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .task-check.checked {
+        background: #1E3A2F;
+        border-color: #1E3A2F;
+        position: relative;
+    }
+    .task-check.checked::after {
+        content: '✓';
+        color: white;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 14px;
+    }
+    .task-title {
+        font-weight: 600;
+    }
+    .task-meta {
+        font-size: 0.8rem;
+        color: #718096;
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.2rem;
+    }
+    .task-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.3rem;
+        border-radius: 8px;
+    }
+    .task-actions button:hover {
+        background: #e2e8f0;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal.active {
+        display: flex;
+    }
+    .modal-content {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        width: 500px;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 500;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary {
+        background: #1E3A2F;
+        color: white;
+    }
+    .btn-secondary {
+        background: #e2e8f0;
+    }
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #718096;
+    }
+</style>
+
+<script>
+    let currentTaskId = null;
+
+    function getCookie(name) {
+        let v = null;
+        if (document.cookie) {
+            const cookies = document.cookie.split(';');
+            for (let c of cookies) {
+                c = c.trim();
+                if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+            }
+        }
+        return v;
+    }
+
+    function showAddModal() {
+        currentTaskId = null;
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('taskDeadline').value = '';
+        document.getElementById('taskPriority').value = '2';
+        document.querySelector('.modal-title').innerText = 'Nouvelle tâche';
+        document.getElementById('modalActionBtn').innerText = 'Créer';
+        document.getElementById('taskModal').classList.add('active');
+    }
+
+    function hideModal() {
+        document.getElementById('taskModal').classList.remove('active');
+    }
+
+    function loadTasks() {
+        const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const priority = document.getElementById('filterPriority')?.value || '';
+        const status = document.getElementById('filterStatus')?.value || '';
+        const grid = document.getElementById('tasksGrid');
+        grid.innerHTML = '<div class="loading">Chargement...</div>';
+
+        fetch('/api/taches/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(tasks => {
+                let filtered = tasks;
+                if (search) filtered = filtered.filter(t => t.titre.toLowerCase().includes(search));
+                if (priority) filtered = filtered.filter(t => t.priorite == priority);
+                if (status) filtered = filtered.filter(t => t.statut == status);
+
+                document.getElementById('tasksCount').innerText = filtered.length + ' tâche' + (filtered.length > 1 ? 's' : '');
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = '<div class="empty-state">Aucune tâche</div>';
+                    return;
+                }
+
+                grid.innerHTML = filtered.map(task => {
+                    let priorityText = task.priorite == 4 ? 'Urgente' : (task.priorite == 3 ? 'Haute' : (task.priorite == 2 ? 'Moyenne' : 'Basse'));
+                    let priorityClass = task.priorite == 4 ? 'priority-high' : (task.priorite == 3 ? 'priority-medium' : 'priority-low');
+                    return `
+                        <div class="task-card ${task.statut === 'terminee' ? 'done' : ''}">
+                            <div class="task-left">
+                                <div class="task-check ${task.statut === 'terminee' ? 'checked' : ''}" onclick="toggleTask(${task.id})"></div>
+                                <div class="task-info">
+                                    <div class="task-title">${task.titre}</div>
+                                    <div class="task-meta">
+                                        <span>📅 ${new Date(task.deadline).toLocaleDateString()}</span>
+                                        <span class="${priorityClass}">⚠️ ${priorityText}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <button onclick="editTask(${task.id})"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteTask(${task.id})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+    }
+
+    function createTask() {
+        const title = document.getElementById('taskTitle').value;
+        const description = document.getElementById('taskDescription').value;
+        const deadline = document.getElementById('taskDeadline').value;
+        const priorite = document.getElementById('taskPriority').value;
+
+        if (!title || !deadline) {
+            alert('Veuillez remplir le titre et la date limite');
+            return;
+        }
+
+        fetch('/api/taches/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                titre: title,
+                description: description,
+                deadline: new Date(deadline).toISOString(),
+                priorite: parseInt(priorite),
+                assigne_a: 1
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Erreur création');
+            return response.json();
+        })
+        .then(() => {
+            hideModal();
+            loadTasks();
+            alert('✅ Tâche créée');
+        })
+        .catch(error => {
+            console.error(error);
+            alert('❌ Erreur lors de la création');
+        });
+    }
+
+    function editTask(id) {
+        fetch(`/api/taches/${id}/`, { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(task => {
+                currentTaskId = id;
+                document.getElementById('taskTitle').value = task.titre;
+                document.getElementById('taskDescription').value = task.description || '';
+                const deadline = new Date(task.deadline).toISOString().slice(0, 16);
+                document.getElementById('taskDeadline').value = deadline;
+                document.getElementById('taskPriority').value = task.priorite;
+                document.querySelector('.modal-title').innerText = 'Modifier la tâche';
+                document.getElementById('modalActionBtn').innerText = 'Modifier';
+                document.getElementById('modalActionBtn').onclick = () => updateTask();
+                showAddModal();
+            });
+    }
+
+    function updateTask() {
+        const title = document.getElementById('taskTitle').value;
+        const description = document.getElementById('taskDescription').value;
+        const deadline = document.getElementById('taskDeadline').value;
+        const priorite = document.getElementById('taskPriority').value;
+
+        if (!title || !deadline) {
+            alert('Veuillez remplir le titre et la date limite');
+            return;
+        }
+
+        fetch(`/api/taches/${currentTaskId}/`, {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                titre: title,
+                description: description,
+                deadline: new Date(deadline).toISOString(),
+                priorite: parseInt(priorite),
+                assigne_a: 1
+            })
+        })
+        .then(() => {
+            hideModal();
+            loadTasks();
+            alert('✅ Tâche modifiée');
+        })
+        .catch(error => {
+            console.error(error);
+            alert('❌ Erreur modification');
+        });
+    }
+
+    function deleteTask(id) {
+        if (confirm('Supprimer cette tâche ?')) {
+            fetch(`/api/taches/${id}/`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            })
+            .then(() => loadTasks());
+        }
+    }
+
+    function toggleTask(id) {
+        fetch(`/api/taches/${id}/marquer_terminee/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(() => loadTasks());
+    }
+
+    function exportToCSV() {
+        fetch('/api/taches/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(tasks => {
+                let csv = "Titre,Description,Date limite,Priorité,Statut\n";
+                tasks.forEach(t => {
+                    csv += `"${t.titre}","${t.description || ''}",${new Date(t.deadline).toLocaleDateString()},${t.priorite},${t.statut}\n`;
+                });
+                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "taches_export.csv";
+                link.click();
+            });
+    }
+
+    document.getElementById('searchInput')?.addEventListener('input', loadTasks);
+    document.getElementById('filterPriority')?.addEventListener('change', loadTasks);
+    document.getElementById('filterStatus')?.addEventListener('change', loadTasks);
+    document.getElementById('clearFilters')?.addEventListener('click', () => {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('filterPriority').value = '';
+        document.getElementById('filterStatus').value = '';
+        loadTasks();
+    });
+
+    loadTasks();
+</script>
+{% endblock %}

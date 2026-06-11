@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: agenda-collaborative
+    runtime: python
+    plan: free
+    autoDeploy: false
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn agenda_collaborative.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: agenda_collaborative.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false

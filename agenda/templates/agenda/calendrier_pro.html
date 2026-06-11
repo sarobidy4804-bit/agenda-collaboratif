@@ -1,0 +1,258 @@
+{% extends "agenda/base_pro.html" %}
+
+{% block title %}Calendrier · ÉduRégion{% endblock %}
+{% block page_title %}Mon Calendrier{% endblock %}
+
+{% block content %}
+
+<!-- Barre d'outils -->
+<div class="calendar-toolbar animate-toolbar">
+    <div class="view-buttons">
+        <button class="view-btn active" data-view="dayGridMonth">Mois</button>
+        <button class="view-btn" data-view="timeGridWeek">Semaine</button>
+        <button class="view-btn" data-view="timeGridDay">Jour</button>
+        <button class="view-btn" data-view="listWeek">Liste</button>
+    </div>
+    <div class="calendar-actions">
+        <button class="action-btn" id="todayBtn">Aujourd'hui</button>
+        <button class="action-btn icon-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+        <button class="action-btn icon-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<!-- Calendrier -->
+<div class="calendar-container animate-calendar">
+    <div id="calendrier"></div>
+</div>
+
+<!-- Légende -->
+<div class="legend animate-legend">
+    <span class="legend-title"><i class="fas fa-chart-simple"></i> Priorités :</span>
+    <div class="legend-items">
+        <span class="legend-item urgent"><span class="dot urgent-dot"></span> Urgente</span>
+        <span class="legend-item high"><span class="dot high-dot"></span> Haute</span>
+        <span class="legend-item medium"><span class="dot medium-dot"></span> Moyenne</span>
+        <span class="legend-item low"><span class="dot low-dot"></span> Basse</span>
+    </div>
+</div>
+
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+
+<style>
+    .calendar-toolbar {
+        background: white;
+        border-radius: 20px;
+        padding: 0.8rem 1.8rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .view-buttons {
+        display: flex;
+        gap: 10px;
+        background: #f8f9fa;
+        padding: 4px;
+        border-radius: 50px;
+    }
+
+    .view-btn {
+        padding: 8px 20px;
+        border: none;
+        background: transparent;
+        border-radius: 40px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 0.9rem;
+        color: #4a5568;
+    }
+
+    .view-btn.active {
+        background: #1E3A2F;
+        color: white;
+    }
+
+    .view-btn:hover:not(.active) {
+        background: #e2e8f0;
+    }
+
+    .calendar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: none;
+        background: #f8f9fa;
+        border-radius: 40px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #1E3A2F;
+        color: white;
+    }
+
+    .icon-btn {
+        padding: 8px 12px;
+    }
+
+    .calendar-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    #calendrier {
+        height: 650px;
+    }
+
+    .legend {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        margin-top: 2rem;
+        padding: 0.8rem 2rem;
+        background: white;
+        border-radius: 50px;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    .legend-items {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .urgent-dot { background: #dc3545; }
+    .high-dot { background: #fd7e14; }
+    .medium-dot { background: #1E3A2F; }
+    .low-dot { background: #28a745; }
+
+    @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-toolbar { animation: fadeSlideUp 0.4s ease; }
+    .animate-calendar { animation: fadeSlideUp 0.5s ease; }
+    .animate-legend { animation: fadeSlideUp 0.6s ease; }
+
+    @media (max-width: 768px) {
+        .calendar-toolbar { flex-direction: column; align-items: stretch; }
+        .view-buttons, .calendar-actions { justify-content: center; }
+        .legend { flex-direction: column; gap: 0.5rem; border-radius: 30px; }
+        .legend-items { flex-wrap: wrap; justify-content: center; }
+    }
+</style>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js'></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendrier');
+        if (!calendarEl) {
+            console.error("Élément #calendrier non trouvé");
+            return;
+        }
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            headerToolbar: false,
+            events: function(fetchInfo, successCallback, failureCallback) {
+                fetch('/api/evenements/', { credentials: 'same-origin' })
+                .then(response => response.json())
+                .then(data => {
+                    var events = data.map(function(event) {
+                        var color = '#28a745';
+                        if (event.priorite === 4) color = '#dc3545';
+                        else if (event.priorite === 3) color = '#fd7e14';
+                        else if (event.priorite === 2) color = '#1E3A2F';
+                        return {
+                            title: event.titre,
+                            start: event.date_debut,
+                            end: event.date_fin,
+                            backgroundColor: color,
+                            borderColor: 'transparent',
+                            textColor: 'white'
+                        };
+                    });
+                    successCallback(events);
+                })
+                .catch(function(error) {
+                    failureCallback(error);
+                });
+            },
+            dateClick: function(info) {
+                var title = prompt('Titre du nouvel événement :');
+                if (title) {
+                    fetch('/api/evenements/', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            titre: title,
+                            date_debut: info.dateStr + 'T09:00:00',
+                            date_fin: info.dateStr + 'T10:00:00',
+                            priorite: 2
+                        })
+                    })
+                    .then(function() {
+                        calendar.refetchEvents();
+                    });
+                }
+            }
+        });
+        calendar.render();
+
+        document.querySelectorAll('.view-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+                calendar.changeView(this.dataset.view);
+            });
+        });
+
+        document.getElementById('todayBtn').addEventListener('click', function() { calendar.today(); });
+        document.getElementById('prevBtn').addEventListener('click', function() { calendar.prev(); });
+        document.getElementById('nextBtn').addEventListener('click', function() { calendar.next(); });
+    });
+    
+</script>
+{% endblock %}

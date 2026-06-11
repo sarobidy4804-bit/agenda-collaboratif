@@ -1,0 +1,346 @@
+{% extends "agenda/base_pro.html" %}
+
+{% block title %}Statistiques · ÉduRégion{% endblock %}
+{% block page_title %}Analyse et statistiques{% endblock %}
+
+{% block content %}
+
+<!-- Barre d'outils -->
+<div class="stats-toolbar animate-toolbar">
+    <div class="year-selector">
+        <label for="yearSelect">Année :</label>
+        <select id="yearSelect" class="year-select">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+    </div>
+    <div class="stats-info">
+        <span class="info-badge"><i class="fas fa-chart-line"></i> Données en temps réel</span>
+    </div>
+</div>
+
+<!-- Grille des graphiques -->
+<div class="charts-grid">
+    <!-- Carte 1 : Événements par mois -->
+    <div class="chart-card animate-card">
+        <div class="card-header">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Événements par mois</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="eventsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Carte 2 : Tâches par statut -->
+    <div class="chart-card animate-card">
+        <div class="card-header">
+            <i class="fas fa-tasks"></i>
+            <h3>Tâches par statut</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="tasksChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Carte 3 : Notifications par type -->
+    <div class="chart-card animate-card">
+        <div class="card-header">
+            <i class="fas fa-bell"></i>
+            <h3>Notifications par type</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="notificationsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Carte 4 : Évolution des événements -->
+    <div class="chart-card animate-card">
+        <div class="card-header">
+            <i class="fas fa-chart-line"></i>
+            <h3>Évolution des événements</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+    /* ===== BARRE D'OUTILS ===== */
+    .stats-toolbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 1rem 1.8rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid rgba(30,58,47,0.08);
+    }
+
+    .year-selector {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .year-selector label {
+        font-weight: 500;
+        color: #2D3748;
+    }
+
+    .year-select {
+        padding: 0.5rem 1rem;
+        border: 1px solid #E2E8F0;
+        border-radius: 40px;
+        background: white;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .year-select:hover {
+        border-color: #1E3A2F;
+    }
+
+    .stats-info {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .info-badge {
+        background: #F7FAFC;
+        padding: 0.4rem 1rem;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        color: #1E3A2F;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ===== GRILLE DES GRAPHIQUES ===== */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.8rem;
+    }
+
+    .chart-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(5px);
+        border-radius: 24px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(30,58,47,0.08);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    .chart-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
+    .card-header i {
+        font-size: 1.5rem;
+        color: #D69E2E;
+    }
+
+    .card-header h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1E3A2F;
+        margin: 0;
+    }
+
+    .chart-container {
+        height: 280px;
+        position: relative;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-toolbar {
+        animation: fadeSlideUp 0.5s ease-out;
+    }
+
+    .animate-card {
+        animation: fadeSlideUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .animate-card:nth-child(1) { animation-delay: 0.1s; }
+    .animate-card:nth-child(2) { animation-delay: 0.2s; }
+    .animate-card:nth-child(3) { animation-delay: 0.3s; }
+    .animate-card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+        .stats-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .year-selector {
+            justify-content: center;
+        }
+        .stats-info {
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    let charts = {};
+
+    function loadStats() {
+        const year = document.getElementById('yearSelect').value;
+
+        // Charger les événements
+        fetch('/api/evenements/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(events => {
+                const months = Array(12).fill(0);
+                const days = {};
+
+                events.forEach(e => {
+                    const date = new Date(e.date_debut);
+                    if (date.getFullYear() == year) {
+                        months[date.getMonth()]++;
+                        const key = date.toISOString().split('T')[0];
+                        days[key] = (days[key] || 0) + 1;
+                    }
+                });
+
+                // Graphique événements par mois
+                if (charts.eventsChart) charts.eventsChart.destroy();
+                charts.eventsChart = new Chart(document.getElementById('eventsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+                        datasets: [{
+                            label: 'Événements',
+                            data: months,
+                            backgroundColor: '#1E3A2F',
+                            borderRadius: 8,
+                            barPercentage: 0.65
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+
+                // Graphique évolution
+                const sortedDates = Object.keys(days).sort();
+                const sortedValues = sortedDates.map(d => days[d]);
+                if (charts.trendChart) charts.trendChart.destroy();
+                charts.trendChart = new Chart(document.getElementById('trendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates,
+                        datasets: [{
+                            label: 'Événements',
+                            data: sortedValues,
+                            borderColor: '#D69E2E',
+                            backgroundColor: 'rgba(214,158,46,0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#1E3A2F'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            });
+
+        // Charger les tâches
+        fetch('/api/taches/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(tasks => {
+                const stats = { a_faire: 0, en_cours: 0, terminee: 0 };
+                tasks.forEach(t => { if (stats[t.statut] !== undefined) stats[t.statut]++; });
+                if (charts.tasksChart) charts.tasksChart.destroy();
+                charts.tasksChart = new Chart(document.getElementById('tasksChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['À faire', 'En cours', 'Terminées'],
+                        datasets: [{
+                            data: [stats.a_faire, stats.en_cours, stats.terminee],
+                            backgroundColor: ['#D69E2E', '#1E3A2F', '#48BB78'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            });
+
+        // Charger les notifications
+        fetch('/api/notifications/', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(notifs => {
+                const types = { info: 0, rappel: 0, urgence: 0 };
+                notifs.forEach(n => { if (types[n.type] !== undefined) types[n.type]++; });
+                if (charts.notificationsChart) charts.notificationsChart.destroy();
+                charts.notificationsChart = new Chart(document.getElementById('notificationsChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: ['Information', 'Rappel', 'Urgence'],
+                        datasets: [{
+                            data: [types.info, types.rappel, types.urgence],
+                            backgroundColor: ['#1E3A2F', '#D69E2E', '#DC2626'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            });
+    }
+
+    document.getElementById('yearSelect').addEventListener('change', loadStats);
+    loadStats();
+</script>
+{% endblock %}

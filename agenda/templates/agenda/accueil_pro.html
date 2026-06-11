@@ -1,0 +1,368 @@
+{% extends "agenda/base_pro.html" %}
+{% load static %}
+
+{% block title %}Accueil · ÉduCollab{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+
+<!-- Grande carte de bienvenue -->
+<div class="welcome-hero">
+    <div class="welcome-text">
+        <h1>Bonjour, {{ user.first_name|default:user.username }} </h1>
+        <p id="todayDate"></p>
+        <div class="quote-box">
+            <i class="fas fa-quote-left"></i>
+            <p id="quoteOfDay"></p>
+        </div>
+    </div>
+    <div class="welcome-illustration">
+        <i class="fas fa-graduation-cap"></i>
+    </div>
+</div>
+
+<!-- Cartes statistiques -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+        <div>
+            <div class="stat-value" id="eventsCount">-</div>
+            <div class="stat-label">Événements</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+        <div>
+            <div class="stat-value" id="tasksCount">-</div>
+            <div class="stat-label">Tâches</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-bell"></i></div>
+        <div>
+            <div class="stat-value" id="notificationsCount">-</div>
+            <div class="stat-label">Notifications</div>
+        </div>
+    </div>
+</div>
+{% if user.is_staff %}
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div>
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Utilisateurs</div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Actions rapides + message de motivation -->
+<div class="actions-section">
+    <div class="actions">
+        <a href="/calendrier-pro/" class="action-btn"><i class="fas fa-calendar-alt"></i> Nouvel événement</a>
+        <a href="/taches-pro/" class="action-btn"><i class="fas fa-tasks"></i> Nouvelle tâche</a>
+        <a href="/notifications/" class="action-btn"><i class="fas fa-bell"></i> Voir notifications</a>
+    </div>
+    <div class="motivation">
+        <i class="fas fa-star"></i> Restez organisé, un pas à la fois
+    </div>
+</div>
+
+<!-- Section "À venir" -->
+<div class="coming-soon">
+    <h3><i class="fas fa-clock"></i> À venir prochainement</h3>
+    <div class="coming-grid">
+        <div class="coming-card">
+            <i class="fas fa-chart-line"></i>
+            <span>Statistiques avancées</span>
+        </div>
+        <div class="coming-card">
+            <i class="fas fa-envelope"></i>
+            <span>Notifications par email</span>
+        </div>
+        <div class="coming-card">
+            <i class="fas fa-mobile-alt"></i>
+            <span>Application mobile</span>
+        </div>
+    </div>
+</div>
+
+<!-- Derniers événements élégant -->
+<div class="recent-events">
+    <h3><i class="fas fa-history"></i> Derniers événements</h3>
+    <div class="events-list" id="recentEvents">
+        <div class="loading">Chargement...</div>
+    </div>
+</div>
+
+<style>
+    /* Grande carte de bienvenue */
+    .welcome-hero {
+        background: linear-gradient(135deg, #1E3A2F 0%, #2D6A4F 100%);
+        border-radius: 28px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+    .welcome-text h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    .welcome-text p {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        margin: 0;
+    }
+    .quote-box {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.8rem;
+        align-items: flex-start;
+        background: rgba(255,255,255,0.1);
+        padding: 0.8rem 1rem;
+        border-radius: 16px;
+        backdrop-filter: blur(4px);
+        max-width: 80%;
+    }
+    .quote-box i {
+        font-size: 1.2rem;
+        opacity: 0.7;
+    }
+    .quote-box p {
+        font-size: 0.85rem;
+        font-style: italic;
+        line-height: 1.4;
+    }
+    .welcome-illustration i {
+        font-size: 5rem;
+        opacity: 0.3;
+    }
+
+    /* Cartes stats */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 24px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        border: 1px solid #E2E8F0;
+        transition: all 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+        border-color: #D69E2E;
+    }
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        background: #1E3A2F;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+    }
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1E3A2F;
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 0.7rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Actions + motivation */
+    .actions-section {
+        margin-bottom: 2rem;
+    }
+    .actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    .action-btn {
+        background: #1E3A2F;
+        color: white;
+        padding: 0.6rem 1.4rem;
+        border-radius: 40px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .action-btn:hover {
+        background: #2D6A4F;
+        transform: translateY(-2px);
+    }
+    .motivation {
+        background: #F7FAFC;
+        border-radius: 40px;
+        padding: 0.6rem 1.2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #1E3A2F;
+        font-weight: 500;
+    }
+
+    /* Section à venir */
+    .coming-soon {
+        background: #F8FAFC;
+        border-radius: 24px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .coming-soon h3 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: #1E3A2F;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .coming-grid {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .coming-card {
+        background: white;
+        border-radius: 40px;
+        padding: 0.4rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        border: 1px solid #E2E8F0;
+    }
+    .coming-card i {
+        color: #D69E2E;
+    }
+
+    /* Derniers événements */
+    .recent-events {
+        background: white;
+        border-radius: 24px;
+        padding: 1.2rem;
+        border: 1px solid #E2E8F0;
+    }
+    .recent-events h3 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: #1E3A2F;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .events-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    .event-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .event-title {
+        font-weight: 500;
+    }
+    .event-date {
+        font-size: 0.75rem;
+        color: #718096;
+    }
+    .loading {
+        text-align: center;
+        color: #718096;
+        padding: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        .welcome-hero {
+            flex-direction: column;
+            text-align: center;
+        }
+        .quote-box {
+            max-width: 100%;
+        }
+        .coming-grid {
+            justify-content: center;
+        }
+        .actions {
+            justify-content: center;
+        }
+        .motivation {
+            display: block;
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+    // Date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('todayDate').innerText = new Date().toLocaleDateString('fr-FR', options);
+
+    // Citation
+    const citations = [
+        "L'éducation est l'arme la plus puissante pour changer le monde. – Nelson Mandela",
+        "Apprendre, c'est grandir. – Maria Montessori",
+        "L'éducation, c'est la clé de l'avenir. – Malala Yousafzai",
+        "La connaissance est la seule richesse qui augmente quand on la partage."
+    ];
+    document.getElementById('quoteOfDay').innerText = citations[Math.floor(Math.random() * citations.length)];
+
+    // Données
+    fetch('/api/evenements/', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('eventsCount').innerText = data.length;
+            const list = document.getElementById('recentEvents');
+            const recent = data.slice(-3).reverse();
+            if (recent.length) {
+                list.innerHTML = recent.map(e => `
+                    <div class="event-item">
+                        <span class="event-title">📌 ${e.titre}</span>
+                        <span class="event-date">${new Date(e.date_debut).toLocaleDateString()}</span>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<div class="loading">Aucun événement récent</div>';
+            }
+        });
+    fetch('/api/taches/', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => document.getElementById('tasksCount').innerText = data.length);
+    fetch('/api/notifications/', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => document.getElementById('notificationsCount').innerText = data.length);
+</script>
+{% endblock %}

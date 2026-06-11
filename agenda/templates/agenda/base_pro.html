@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ÉduCollab · Gestion d'agenda{% endblock %}</title>
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <style>
+        :root {
+            --bg-page: #F7FAFC;
+            --bg-card: #FFFFFF;
+            --text-main: #1A202C;
+            --text-muted: #4A5568;
+            --border: #E2E8F0;
+            --primary: #1E3A2F;
+            --primary-hover: #2F6B4A;
+            --accent: #D69E2E;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-main);
+            transition: background 0.3s, color 0.3s;
+        }
+        .app { display: flex; min-height: 100vh; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-header { margin-bottom: 1rem; }
+        .logo { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; }
+        .logo span { color: var(--accent); }
+        .user-info-sidebar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            background: var(--bg-page);
+            padding: 0.5rem;
+            border-radius: 12px;
+        }
+        .nav { display: flex; flex-direction: column; gap: 1rem; }
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 1rem 0 0.5rem 0;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: var(--bg-page); color: var(--primary); transform: translateX(3px); }
+        .nav-item.active { background: var(--primary); color: white; }
+        
+        /* Boutons auth modernes */
+        .auth-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary), #2D6A4F);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(30,58,47,0.3);
+        }
+        .btn-logout {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .btn-logout:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+        
+        /* Main content */
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 1.5rem;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .page-title { font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+        .content {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        
+        /* Mode sombre */
+        body[data-theme="sombre"] {
+            --bg-page: #0F172A;
+            --bg-card: #1E293B;
+            --text-main: #F1F5F9;
+            --text-muted: #94A3B8;
+            --border: #334155;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { position: relative; width: 100%; height: auto; }
+            .main { margin-left: 0; }
+        }
+        
+        .theme-btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: var(--bg-page);
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.4s;
+        }
+        .theme-btn:hover { background: var(--border); transform: translateY(-2px); }
+        body[data-theme="sombre"] .fc {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+body[data-theme="sombre"] .fc-day-header,
+body[data-theme="sombre"] .fc-toolbar-title,
+body[data-theme="sombre"] .fc-daygrid-day-number {
+    color: #f1f5f9 !important;
+}
+
+body[data-theme="sombre"] .fc-day-today {
+    background: #334155 !important;
+}
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">DREN<span>Analamanga</span></div>
+                <div class="user-info-sidebar">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ user.username }}</span>
+                </div>
+            </div>
+            <nav class="nav">
+                <div class="nav-section-title">Menu</div>
+                <a href="{% url 'accueil_pro' %}" class="nav-item {% if active_page == 'accueil' %}active{% endif %}"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+                <a href="{% url 'calendrier_pro' %}" class="nav-item {% if active_page == 'calendrier' %}active{% endif %}"><i class="fas fa-calendar-alt"></i> Calendrier</a>
+                <a href="{% url 'taches_pro' %}" class="nav-item {% if active_page == 'taches' %}active{% endif %}"><i class="fas fa-tasks"></i> Tâches</a>
+                <a href="{% url 'profil_pro' %}" class="nav-item {% if active_page == 'profil' %}active{% endif %}"><i class="fas fa-user"></i> Profil</a>
+                <a href="{% url 'statistiques_pro' %}" class="nav-item">
+                    <i class="fas fa-chart-line"></i> Statistiques
+                </a>
+                <a href="{% url 'notifications_pro' %}" class="nav-item {% if active_page == 'notifications' %}active{% endif %}"><i class="fas fa-bell"></i> Notifications</a>
+                {% if user.is_staff %}
+                <a href="/admin/" class="nav-item"><i class="fas fa-lock"></i> Administration</a>
+                {% endif %}
+                {% if user.is_staff %}
+            <a href="/dashboard-admin/" class="nav-item">
+                <i class="fas fa-chalkboard-user"></i> Dashboard admin
+            </a>
+                 {% endif %}
+            </nav>
+            <button id="themeToggle" class="theme-btn"><i class="fas fa-moon"></i> Mode sombre</button>
+        </aside>
+        <main class="main">
+            <div class="header">
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                <div class="user-menu">
+                    <span id="userStatus" class="user-info">Chargement...</span>
+                    <a href="#" id="authBtn" class="auth-btn btn-login">Connexion</a>
+                </div>
+            </div>
+            <div class="content">{% block content %}{% endblock %}</div>
+        </main>
+    </div>
+    <script>
+        function getCookie(name) {
+            let v = null;
+            if (document.cookie) {
+                const cookies = document.cookie.split(';');
+                for (let c of cookies) {
+                    c = c.trim();
+                    if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+                }
+            }
+            return v;
+        }
+        function checkAuth() {
+            fetch('/api/evenements/', { credentials: 'same-origin' })
+                .then(r => {
+                    const status = document.getElementById('userStatus');
+                    const btn = document.getElementById('authBtn');
+                    if (r.status === 200) {
+                        status.innerText = 'Connecté';
+                        btn.outerHTML = `<form method="post" action="/logout/?next=${window.location.pathname}" style="display:inline;"><input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}"><button type="submit" class="auth-btn btn-logout">Déconnexion</button></form>`;
+                    } else {
+                        status.innerText = 'Non connecté';
+                        btn.href = '/login/?next=' + window.location.pathname;
+                        btn.innerText = 'Connexion';
+                        btn.className = 'auth-btn btn-login';
+                    }
+                });
+        }
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.getAttribute('data-theme') === 'sombre';
+            body.setAttribute('data-theme', isDark ? 'clair' : 'sombre');
+            localStorage.setItem('theme', isDark ? 'clair' : 'sombre');
+            const btn = document.getElementById('themeToggle');
+            btn.innerHTML = isDark ? '<i class="fas fa-moon"></i> Mode sombre' : '<i class="fas fa-sun"></i> Mode clair';
+        }
+        const savedTheme = localStorage.getItem('theme') || 'clair';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        checkAuth();
+
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js');
+        }
+        {% block scripts %}{% endblock %}
+     if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(reg => console.log('Service Worker enregistré', reg))
+                .catch(err => console.error('Erreur SW', err));
+        });
+    }
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion · ÉduCollab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.2);
+            width: 900px;
+            max-width: 100%;
+            display: flex;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Partie gauche (message) */
+        .login-left {
+            background: linear-gradient(135deg, #1E3A2F 0%, #2D6A4F 100%);
+            color: white;
+            padding: 2.5rem;
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-left h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-left p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-left .quote {
+            font-style: italic;
+            border-left: 3px solid #D69E2E;
+            padding-left: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Partie droite (formulaire) */
+        .login-right {
+            padding: 2.5rem;
+            width: 55%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo h2 {
+            font-size: 1.6rem;
+            color: #1E3A2F;
+        }
+
+        .logo span {
+            color: #D69E2E;
+        }
+
+        .form-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #2D3748;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            color: #4A5568;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #D69E2E;
+            font-size: 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 12px 12px 44px;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            background: #F8FAFC;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1E3A2F;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(30,58,47,0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #1E3A2F;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-login:hover {
+            background: #2D6A4F;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30,58,47,0.3);
+        }
+
+        .separator {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #A0AEC0;
+            font-size: 0.85rem;
+            position: relative;
+        }
+
+        .separator::before,
+        .separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: #E2E8F0;
+        }
+        .separator::before { left: 0; }
+        .separator::after { right: 0; }
+
+        .social-login {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #E2E8F0;
+            border-radius: 40px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .social-btn:hover {
+            border-color: #D69E2E;
+            background: #F7FAFC;
+        }
+
+        .register-link {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .register-link a {
+            color: #1E3A2F;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #FEE2E2;
+            color: #DC2626;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                width: 100%;
+            }
+            .login-left, .login-right {
+                width: 100%;
+            }
+            .login-left {
+                text-align: center;
+            }
+            .login-left .quote {
+                border-left: none;
+                border-top: 2px solid #D69E2E;
+                padding-top: 1rem;
+            }
+        }
+        .forgot-password {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+.forgot-password a {
+    color: #D69E2E;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Partie gauche : message inspirant -->
+        <div class="login-left">
+            <h1>Bienvenue</h1>
+            <p>Plateforme collaborative de planification pour l'éducation régionale.</p>
+            <div class="quote">
+                "L'éducation est l'arme la plus puissante pour changer le monde."
+                <br>— Nelson Mandela
+            </div>
+        </div>
+
+        <!-- Partie droite : formulaire -->
+        <div class="login-right">
+            <div class="logo">
+                <h2>DREN<span>Analamanga</span></h2>
+            </div>
+            <div class="form-title">Connexion</div>
+
+            {% if form.errors %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i> Nom d'utilisateur ou mot de passe incorrect.
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Nom d'utilisateur</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="username" placeholder="ex: admin" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">Se connecter</button>
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+            <div class="forgot-password">
+                <a href="{% url 'password_reset' %}">Mot de passe oublié ?</a>
+            </div>
+            <div class="separator">ou</div>
+
+            <div class="social-login">
+                <div class="social-btn" onclick="alert('Connexion Google en construction')">
+                    <i class="fab fa-google"></i> Google
+                </div>
+                <div class="social-btn" onclick="alert('Connexion GitHub en construction')">
+                    <i class="fab fa-github"></i> GitHub
+                </div>
+                <div class="social-btn" onclick="alert('Connexion Facebook en construction')">
+                    <i class="fab fa-facebook-f"></i> Facebook
+                </div>
+            </div>
+
+            <div class="register-link">
+                Pas encore de compte ? <a href="{% url 'register' %}">Créer un compte</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

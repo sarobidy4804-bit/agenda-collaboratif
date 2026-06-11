@@ -1,0 +1,434 @@
+{% extends "agenda/base_pro.html" %}
+{% load gravatar_tags %}
+
+{% block title %}Profil · ÉduCollab{% endblock %}
+{% block page_title %}Mon profil{% endblock %}
+
+{% block content %}
+
+<div class="profile-container animate-profile">
+    <div class="profile-card">
+
+        <!-- En-tête avec photo -->
+        <div class="profile-header">
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar" id="profileAvatar" onclick="document.getElementById('photoInput').click()">
+                    {% if user.photo %}
+                        <img src="{{ user.photo.url }}" alt="Photo de profil">
+                    {% else %}
+                        <div class="initials-avatar">
+                            {{ user.first_name|first|default:user.username|first|upper }}{{ user.last_name|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="avatar-overlay">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                {% if user.photo %}
+                <button id="deletePhotoBtn" class="btn-delete-photo" title="Supprimer la photo">
+                    <i class="fas fa-trash-alt"></i> Supprimer la photo
+                </button>
+                {% endif %}
+            </div>
+            <form id="photoForm" method="post" enctype="multipart/form-data" style="display: none;">
+                {% csrf_token %}
+                <input type="file" id="photoInput" name="photo" accept="image/*" onchange="uploadPhoto()">
+            </form>
+            <div class="profile-name">{{ user.first_name }} {{ user.last_name }}</div>
+            <div class="profile-role">{{ user.get_role_display|default:"Membre" }}</div>
+            <div class="profile-email"><i class="fas fa-envelope"></i> {{ user.email }}</div>
+        </div>
+
+        <!-- Corps du profil -->
+        <div class="profile-body">
+            <!-- Informations personnelles -->
+            <div class="info-section">
+                <h3 class="section-title"><i class="fas fa-user-circle"></i> Informations personnelles</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-user"></i> Nom d'utilisateur</div>
+                        <div class="info-value">{{ user.username }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-user"></i> Prénom</div>
+                        <div class="info-value">{{ user.first_name|default:"Non renseigné" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-user"></i> Nom</div>
+                        <div class="info-value">{{ user.last_name|default:"Non renseigné" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-phone"></i> Téléphone</div>
+                        <div class="info-value">{{ user.telephone|default:"Non renseigné" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-briefcase"></i> Domaine</div>
+                        <div class="info-value">{{ user.domaine|default:"Non renseigné" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-calendar"></i> Membre depuis</div>
+                        <div class="info-value">{{ user.date_joined|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-clock"></i> Dernière connexion</div>
+                        <div class="info-value">{{ user.last_login|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-shield-alt"></i> Statut</div>
+                        <div class="info-value">
+                            {% if user.is_superuser %}
+                                <span class="badge admin">Administrateur</span>
+                            {% elif user.is_staff %}
+                                <span class="badge staff">Personnel</span>
+                            {% else %}
+                                <span class="badge user">Utilisateur</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Préférences -->
+            <div class="info-section">
+                <h3 class="section-title"><i class="fas fa-sliders-h"></i> Préférences</h3>
+                <div class="preferences-grid">
+                    <div class="pref-item">
+                        <div class="pref-label"><i class="fas fa-globe"></i> Langue</div>
+                        <div class="pref-value">
+                            <select id="prefLangue" class="pref-select">
+                                <option value="fr" {% if user.preferences.langue == 'fr' %}selected{% endif %}>🇫🇷 Français</option>
+                                <option value="en" {% if user.preferences.langue == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <div class="pref-label"><i class="fas fa-palette"></i> Thème</div>
+                        <div class="pref-value">
+                            <select id="prefTheme" class="pref-select">
+                                <option value="clair" {% if user.preferences.theme == 'clair' %}selected{% endif %}>☀️ Clair</option>
+                                <option value="sombre" {% if user.preferences.theme == 'sombre' %}selected{% endif %}>🌙 Sombre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <div class="pref-label"><i class="fas fa-bell"></i> Notifications</div>
+                        <div class="pref-value">
+                            <label class="switch">
+                                <input type="checkbox" id="prefNotifications" {% if user.preferences.notifications_actives %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <div class="pref-label"><i class="fas fa-clock"></i> Heures silencieuses</div>
+                        <div class="pref-value time-range">
+                            <input type="time" id="prefHeureDebut" class="time-input" value="{{ user.preferences.heure_debut_silence|time:'H:i' }}">
+                            <span>à</span>
+                            <input type="time" id="prefHeureFin" class="time-input" value="{{ user.preferences.heure_fin_silence|time:'H:i' }}">
+                        </div>
+                    </div>
+                    <div class="pref-item">
+                        <div class="pref-label"><i class="fas fa-hourglass-half"></i> Rappel avant</div>
+                        <div class="pref-value">
+                            <select id="prefRappel" class="pref-select">
+                                <option value="5" {% if user.preferences.notification_avant_evenement == 5 %}selected{% endif %}>5 minutes</option>
+                                <option value="15" {% if user.preferences.notification_avant_evenement == 15 %}selected{% endif %}>15 minutes</option>
+                                <option value="30" {% if user.preferences.notification_avant_evenement == 30 %}selected{% endif %}>30 minutes</option>
+                                <option value="60" {% if user.preferences.notification_avant_evenement == 60 %}selected{% endif %}>1 heure</option>
+                                <option value="120" {% if user.preferences.notification_avant_evenement == 120 %}selected{% endif %}>2 heures</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="profile-actions">
+                <button class="btn-save" onclick="savePreferences()">
+                    <i class="fas fa-save"></i> Enregistrer les modifications
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== CONTAINER ===== */
+    .profile-container { max-width: 1000px; margin: 0 auto; }
+    .animate-profile { animation: fadeSlideUp 0.6s ease-out; }
+    .profile-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 32px;
+        overflow: hidden;
+        box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+        border: 1px solid rgba(30,58,47,0.08);
+    }
+
+    /* ===== EN-TÊTE ===== */
+    .profile-header {
+        background: linear-gradient(135deg, #1E3A2F 0%, #2F6B4A 100%);
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+    }
+    .profile-avatar-wrapper {
+        display: inline-block;
+        text-align: center;
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        margin: 0 auto 1rem;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        color: white;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .avatar-overlay {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40px;
+        height: 40px;
+        background: #D69E2E;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .profile-avatar:hover .avatar-overlay { opacity: 1; }
+    .btn-delete-photo {
+        margin-top: 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: 0.2s;
+    }
+    .btn-delete-photo:hover { background: #b91c1c; transform: scale(1.02); }
+    .profile-name { font-size: 1.8rem; font-weight: 600; color: white; margin-bottom: 0.25rem; }
+    .profile-role { font-size: 1rem; color: rgba(255,255,255,0.9); margin-bottom: 0.25rem; }
+    .profile-email { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+
+    /* ===== CORPS ===== */
+    .profile-body { padding: 2rem; }
+    .info-section { margin-bottom: 2rem; }
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1E3A2F;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #E2E8F0;
+    }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    .info-item {
+        background: #F7FAFC;
+        border-radius: 16px;
+        padding: 1rem;
+        transition: all 0.3s;
+    }
+    .info-item:hover {
+        transform: translateY(-2px);
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .info-label {
+        font-size: 0.8rem;
+        color: #718096;
+        margin-bottom: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .info-label i { color: #D69E2E; }
+    .info-value { font-size: 1rem; font-weight: 500; color: #2D3748; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 30px; font-size: 0.75rem; font-weight: 600; }
+    .badge.admin { background: #1E3A2F; color: white; }
+    .badge.staff { background: #D69E2E; color: white; }
+    .badge.user { background: #E2E8F0; color: #2D3748; }
+
+    /* ===== PRÉFÉRENCES ===== */
+    .preferences-grid { display: flex; flex-direction: column; gap: 1rem; }
+    .pref-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .pref-label { font-weight: 500; color: #4A5568; display: flex; align-items: center; gap: 0.5rem; }
+    .pref-label i { color: #D69E2E; width: 20px; }
+    .pref-select { padding: 0.5rem 1rem; border: 1px solid #E2E8F0; border-radius: 40px; background: white; font-size: 0.9rem; }
+    .time-range { display: flex; align-items: center; gap: 0.5rem; }
+    .time-input { padding: 0.5rem; border: 1px solid #E2E8F0; border-radius: 12px; background: white; }
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #CBD5E0;
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #1E3A2F; }
+    input:checked + .slider:before { transform: translateX(26px); }
+
+    /* ===== ACTIONS ===== */
+    .profile-actions {
+        margin-top: 2rem;
+        text-align: center;
+    }
+    .btn-save {
+        background: #1E3A2F;
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 40px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-save:hover { background: #0F2A1F; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30,58,47,0.3); }
+
+    /* ===== INITIALES ===== */
+    .initials-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1E3A2F, #2D6A4F);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .pref-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    }
+</style>
+
+<script>
+    function getCookie(name) {
+        let v = null;
+        if (document.cookie) {
+            const cookies = document.cookie.split(';');
+            for (let c of cookies) {
+                c = c.trim();
+                if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+            }
+        }
+        return v;
+    }
+
+    function uploadPhoto() {
+        const formData = new FormData();
+        formData.append('photo', document.getElementById('photoInput').files[0]);
+        fetch('/api/changer_photo/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: formData
+        }).then(r => r.json()).then(data => {
+            if (data.success) location.reload();
+            else alert('Erreur');
+        });
+    }
+
+    function savePreferences() {
+        const data = {
+            langue: document.getElementById('prefLangue').value,
+            theme: document.getElementById('prefTheme').value,
+            notifications_actives: document.getElementById('prefNotifications').checked,
+            heure_debut_silence: document.getElementById('prefHeureDebut').value || null,
+            heure_fin_silence: document.getElementById('prefHeureFin').value || null,
+            notification_avant_evenement: parseInt(document.getElementById('prefRappel').value)
+        };
+        fetch('/api/sauvegarder_preferences/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                alert('✅ Préférences enregistrées !');
+                if (data.theme) document.body.setAttribute('data-theme', data.theme);
+            } else alert('❌ Erreur');
+        });
+    }
+
+    document.getElementById('deletePhotoBtn')?.addEventListener('click', function() {
+        if (confirm('Supprimer votre photo de profil ?')) {
+            fetch('/api/supprimer-photo/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) location.reload();
+                else alert('Erreur lors de la suppression');
+            });
+        }
+    });
+</script>
+{% endblock %}
